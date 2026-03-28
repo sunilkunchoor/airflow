@@ -23,7 +23,7 @@ from sqlalchemy.sql import select
 from airflow.api_fastapi.common.dagbag import DagBagDep, get_dag_for_run_or_latest_version
 from airflow.api_fastapi.common.db.common import SessionDep
 from airflow.api_fastapi.common.router import AirflowRouter
-from airflow.api_fastapi.core_api.datamodels.extra_links import ExtraLinkCollectionResponse
+from airflow.api_fastapi.core_api.datamodels.extra_links import ExtraLinkResponse, ExtraLinkCollectionResponse
 from airflow.api_fastapi.core_api.openapi.exceptions import create_openapi_http_exception_doc
 from airflow.api_fastapi.core_api.security import DagAccessEntity, requires_access_dag
 from airflow.exceptions import TaskNotFound
@@ -74,13 +74,32 @@ def get_extra_links(
             status.HTTP_404_NOT_FOUND,
             "TaskInstance not found",
         )
+    
+    formatted_links = []
+    
+    for link_name in sorted(task.extra_links):
+        link_url = task.get_extra_links(ti, link_name)
+        link_obj = None
+        
+        # Check operator-specific links first
+        if hasattr(task, "operator_extra_links"):
+            link_obj = next((l for l in task.operator_extra_links if l.name == link_name), None)
+            
+        # If not found, check global plugin extra links
+        if not link_obj:
+            link_obj = next((l for l in global_operator_extra_links if l.name == link_name), None)
 
-    all_extra_link_pairs = (
-        (link_name, task.get_extra_links(ti, link_name)) for link_name in task.extra_links
-    )
-    all_extra_links = {link_name: link_url or None for link_name, link_url in sorted(all_extra_link_pairs)}
+        target_val = getattr(link_obj, 'target', '_blank') if link_obj else '_blank'
+        
+        formatted_links.append(
+            ExtraLinkResponse(
+                name=link_name,
+                url=link_url or None,
+                target=target_val
+            )
+        )
 
     return ExtraLinkCollectionResponse(
-        extra_links=all_extra_links,
-        total_entries=len(all_extra_links),
+        extra_links=formatted_links,
+        total_entries=len(formatted_links),
     )

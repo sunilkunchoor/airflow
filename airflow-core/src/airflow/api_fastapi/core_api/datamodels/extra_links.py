@@ -22,9 +22,15 @@ from pydantic import Field
 
 from airflow.api_fastapi.core_api.base import BaseModel
 
+class ExtraLinkResponse(BaseModel):
+    """Structured Pydantic model for the extra_links."""
+
+    name: str
+    url: Optional[str]
+    target: str = "_blank"
 
 class ExtraLinkCollectionResponse(BaseModel):
     """Extra Links Response."""
 
-    extra_links: dict[str, str | None]
+    extra_links: List[ExtraLinkResponse]
     total_entries: Annotated[int, Field(title="Total Entries")]

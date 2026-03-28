@@ -43,15 +43,20 @@ export const ExtraLinks = ({ refetchInterval }: ExtraLinksProps) => {
     },
   );
 
-  return data && Object.keys(data.extra_links).length > 0 ? (
+  return data && data.extra_links && data.extra_links.length > 0 ? (
     <Box py={1}>
       <Heading size="sm">{translate("extraLinks")}</Heading>
       <HStack gap={2} py={2}>
-        {Object.entries(data.extra_links).map(([key, value], _) =>
-          value === null ? undefined : (
-            <Button asChild colorPalette="brand" key={key} variant="surface">
-              <a href={value} rel="noopener noreferrer" target="_blank">
-                {key}
+        {/* Map over the new array of link objects */}
+        {data.extra_links.map((link) =>
+          link.url === null ? undefined : (
+            <Button asChild colorPalette="brand" key={link.name} variant="surface">
+              <a 
+                href={link.url} 
+                target={link.target || "_blank"}
+                rel={link.target === "_blank" || !link.target ? "noopener noreferrer" : undefined}
+              >
+                {link.name}
               </a>
             </Button>
           ),

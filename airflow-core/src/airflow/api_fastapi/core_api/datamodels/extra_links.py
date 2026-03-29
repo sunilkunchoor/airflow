@@ -16,7 +16,7 @@
 # under the License.
 from __future__ import annotations
 
-from typing import Annotated
+from typing import Annotated, List, Optional
 
 from pydantic import Field
 
